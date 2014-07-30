@@ -5,6 +5,11 @@
 \usage{
 \method{predict}{adapt}(obj, newx)
 }
+\arguments{
+\item{obj}{an adaptive lasso model}
+
+\item{newx}{the covariate values to use for prediction}
+}
 \description{
 Make predictions from an adaptive lasso model.
 }

@@ -1,7 +1,7 @@
 #' Make predictions from an adaptive lasso model.
 #'
 #' @param obj an adaptive lasso model
-#' @param newx the covariate values to be used for prediction
+#' @param newx the covariate values to use for prediction
 #'
 #' @export
 predict.adapt <-  function(obj, newx) {
