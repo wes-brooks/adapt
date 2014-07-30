@@ -1,0 +1,16 @@
+{
+    "contents" : "adaptive.weights <- function(formula, data, verbose=FALSE, ...) {\n    #Create the object that will hold the output\n    result <- list()\n\n    #Pull out the relevant data\n    response.name = rownames(attr(terms(formula, data=data), 'factors'))[1]\n    response.col = which(colnames(data)==response.name)\n    predictor.names = attr(terms(formula, data=data), 'term.labels')\n\n    response = as.matrix(data[,response.col])\n    x = as.matrix(data[,-response.col])\n\n    #Set up the lists to hold the adaptive weights:\n    result[['meanx']] = colMeans(x)\n    x.centered = sweep(x, 2, result[['meanx']])\n\n    #Make the calls to glm\n    coefs = list()\n    for (predictor in predictor.names) {\n        if (result[['normx']][[predictor]] < Inf) {\n            model = lm(response~x.centered[,predictor])\n            coefs[[predictor]] = coef(model)[2]\n        } else {\n            coefs[[predictor]] = 0\n        }\n    }\n\n    result[['coefs']] = coefs\n    result[['adaweight']] = sapply(predictor.names, function(x) abs(coefs[[x]]))\n\n    return(result)\n}\n",
+    "created" : 1406740578932.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "1097680252",
+    "id" : "DE7EDFE6",
+    "lastKnownWriteTime" : 1406740726,
+    "path" : "C:/Users/wrbrooks/git/adapt/R/adaptive.weights.R",
+    "project_path" : "R/adaptive.weights.R",
+    "properties" : {
+    },
+    "source_on_save" : false,
+    "type" : "r_source"
+}
