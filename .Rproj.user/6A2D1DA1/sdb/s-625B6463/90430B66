@@ -1,12 +1,12 @@
 {
-    "contents" : "#' Make predictions from an adaptive lasso model.\n#' @export\npredict.adapt <-  function(obj, newx) {\n    pred.data = newx\n    predictors = obj[['predictors']]\n    colnames(pred.data) = colnames(newx)\n    pred.data = pred.data[,predictors]\n    \n    if (obj[['selectonly']]) {\n        predictions = predict(obj[['lm']], newx)\n    } else {\n        pred.data = sweep(pred.data, 2, obj[['lars']][['meanx']], '-')\n        pred.data = sweep(pred.data, 2, obj[['lars']][['scale']], '*')\n        predictions = predict(obj[['lars']][['model']], newx=pred.data, s=obj[['lars']][['lambda.index']], mode='step', type='fit')[['fit']]\n    }\n    \n    return(predictions)\n}\n",
+    "contents" : "#' Make predictions from an adaptive lasso model.\n#'\n#' @param obj an adaptive lasso model\n#' @param newx the covariate values to be used for prediction\n#'\n#' @export\npredict.adapt <-  function(obj, newx) {\n    pred.data = newx\n    predictors = obj[['predictors']]\n    colnames(pred.data) = colnames(newx)\n    pred.data = pred.data[,predictors]\n\n    if (obj[['selectonly']]) {\n        predictions = predict(obj[['lm']], newx)\n    } else {\n        pred.data = sweep(pred.data, 2, obj[['lars']][['meanx']], '-')\n        pred.data = sweep(pred.data, 2, obj[['lars']][['scale']], '*')\n        predictions = predict(obj[['lars']][['model']], newx=pred.data, s=obj[['lars']][['lambda.index']], mode='step', type='fit')[['fit']]\n    }\n\n    return(predictions)\n}\n",
     "created" : 1406740839507.000,
     "dirty" : false,
     "encoding" : "UTF-8",
     "folds" : "",
-    "hash" : "1461998898",
+    "hash" : "670164694",
     "id" : "90430B66",
-    "lastKnownWriteTime" : 1406739271,
+    "lastKnownWriteTime" : 1406746357,
     "path" : "C:/Users/wrbrooks/git/adapt/R/predict.adapt.R",
     "project_path" : "R/predict.adapt.R",
     "properties" : {

@@ -2,6 +2,9 @@ adaptive.weights <- function(formula, data, verbose=FALSE, ...) {
     #Create the object that will hold the output
     result <- list()
 
+    #This is the amount of error to accept when declaring numbers equal:
+    tol = .Machine$double.eps ^ 0.5
+
     #Pull out the relevant data
     response.name = rownames(attr(terms(formula, data=data), 'factors'))[1]
     response.col = which(colnames(data)==response.name)
@@ -14,14 +17,16 @@ adaptive.weights <- function(formula, data, verbose=FALSE, ...) {
     result[['meanx']] = colMeans(x)
     x.centered = sweep(x, 2, result[['meanx']])
 
-    #Make the calls to glm
+    #Get the OLS coefficient for each covariate
     coefs = list()
     for (predictor in predictor.names) {
-        if (result[['normx']][[predictor]] < Inf) {
+        z = x.centered[,predictor]
+
+        if (abs(max(z)-min(z)) < tol) {
+            coefs[[predictor]] = 0
+        } else {
             model = lm(response~x.centered[,predictor])
             coefs[[predictor]] = coef(model)[2]
-        } else {
-            coefs[[predictor]] = 0
         }
     }
 
