@@ -2,19 +2,24 @@
 #'
 #' This function produces a linear regression model via the adaptive lasso. Given a formula, a data.frame, and a selection.method, \code{adapt} will fit a linear model for the predictor in the formula, using the data, that minimizes the selection.method.
 #'
-#' @param formula A formula listing the response and covariates
-#' @param data A data.frame containing the data to use in building the model.
-#' @param adapt Whether or not to use adaptive weights in the lasso
+#' @param formula symbolis representation of the model variables
+#' @param data data.frame containing observations of the covariates and response from the formula
 #' @param selection.method The selection criterion to minimize in model fitting
 #' @param selectonly Use the adaptive lasso only for selection, doing coefficient estimation via OLS?
 #'
 #' @export
-adapt <- function(formula, data, adapt=TRUE, selection.method='AICc', selectonly=FALSE) {
+adapt <- function(formula, data, criterion=c('AIC', 'BIC', 'AICc', 'CV', 'CV.overshrink'), selectonly=FALSE, na.action=na.omit) {
     #Create the object that will hold the output
     result = list()
     class(result) = "adapt"
     result[['formula']] = as.formula(formula, env=data)
     result[['selectonly']] = selectonly
+    result[['criterion']] = criterion = match.arg(criterion)
+
+    #Get the model data:
+    mf = model.frame(formula, data, na.action=na.action)
+    Y = mf[,1]
+    X = mf[,-1]
 
     #Drop any rows with NA values
     na.rows = (which(is.na(data))-1) %% dim(data)[1] + 1
@@ -27,14 +32,9 @@ adapt <- function(formula, data, adapt=TRUE, selection.method='AICc', selectonly
     result[['predictors']] = attr(terms(formula, data=data), 'term.labels')
     response.col = which(colnames(data)==result[['response']])
 
-    f = as.formula(paste(paste(result[['response']], "~", sep=''), paste(result[['predictors']], collapse='+'), sep=''), env=as.environment(data))
-    if (adapt) {
-        result[['adapt']] = adaptive.weights(formula=f, data=data)
-    } else {
-        result[['adapt']] = NULL
-    }
+    result[['adapt']] = adaptive.weights(y=Y, x=X)
 
-    result[['lars']] = adapt.step(formula=formula, data=data, adaptive.object=result[['adapt']], selection.method=selection.method, adapt=adapt)
+    result[['lars']] = adapt.step(x=X, y=Y, adaptive.object=result[['adapt']], criterion=criterion)
     result[['lambda']] = result[['lars']][['model']][['lambda']][result[['lars']][['lambda.index']]]
 
     if (selectonly) {
@@ -48,7 +48,7 @@ adapt <- function(formula, data, adapt=TRUE, selection.method='AICc', selectonly
         result[['actual']] = m$fitted + m$residuals
     } else {
         result[['coef']] = result[['lars']][['coef']]
-        result[['actual']] = data[,response.col]
+        result[['actual']] = Y
         result[['fitted']] = predict.adapt(result, data)
         result[['residuals']] = result[['actual']] - result[['fitted']]
     }
