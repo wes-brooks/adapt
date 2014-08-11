@@ -1,25 +1,24 @@
-adaptive.weights <- function(x, y, verbose=FALSE, ...) {
+adaptive.weights <- function(x, y, family, weights, predictor.names, verbose=FALSE, ...) {
     #Create the object that will hold the output
     result <- list()
 
     #This is the amount of error to accept when declaring numbers equal:
     tol = .Machine$double.eps ^ 0.5
 
-    #Set up the lists to hold the adaptive weights:
-    result[['meanx']] = colMeans(x)
-    x.centered = sweep(x, 2, result[['meanx']])
-    predictor.names = colnames(x)
-
     #Get the OLS coefficient for each covariate
     coefs = list()
     for (predictor in predictor.names) {
-        z = x.centered[,predictor]
+        z = x[,predictor]
 
-        if (abs(max(z)-min(z)) < tol) {
+        if (!is.factor(z) && abs(max(z)-min(z)) < tol) {
             coefs[[predictor]] = 0
-        } else {
-            model = lm(y~x.centered[,predictor])
-            coefs[[predictor]] = coef(model)[2]
+        } else if (is.factor(z) && all.equal(z, z[1])) {
+            coefs[[predictor]] = 0
+        }
+            model = glm(y~z, family=family, weights=weights)
+print(coef(model))
+print(predictor)
+            coefs[[predictor]] = coef(model)[-1]
         }
     }
 
