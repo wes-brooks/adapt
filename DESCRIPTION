@@ -8,6 +8,8 @@ Maintainer: Wesley Brooks <wrbrooks@usgs.gov>
 Description: Use the adaptive lasso for shrinkage and variable selection in a
     linear model.
 Depends:
-    lars
+    lars,
+    glmnet,
+    dplyr
 License: MIT
 LazyLoad: yes
