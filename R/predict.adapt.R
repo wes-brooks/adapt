@@ -4,18 +4,16 @@
 #' @param newx the covariate values to use for prediction
 #'
 #' @export
-predict.adapt <-  function(obj, newx) {
+predict.adapt <-  function(obj, newx, lambda=obj[['al']][['lambda']], type=c("link","response","coefficients","nonzero","class")) {
     pred.data = newx
     predictors = obj[['predictors']]
-    colnames(pred.data) = colnames(newx)
-    pred.data = pred.data[,predictors]
+    pred.data = pred.data[,predictors] %>% as.matrix %>% sweep(2, obj[['al']][['meanx']], '-') %>% sweep(2, obj[['al']][['scale']], '*')
+    type = match.arg(type)
 
     if (obj[['selectonly']]) {
         predictions = predict(obj[['glm']], newx)
     } else {
-        pred.data = sweep(pred.data, 2, obj[['al']][['meanx']], '-')
-        pred.data = sweep(pred.data, 2, obj[['al']][['scale']], '*')
-        predictions = predict(obj[['al']][['model']], newx=pred.data, s=obj[['al']][['lambda.index']], mode='step', type='fit')[['fit']]
+        predictions = predict(obj[['al']][['model']], newx=pred.data, s=lambda, type=type)
     }
 
     return(predictions)

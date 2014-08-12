@@ -12,15 +12,11 @@ adaptive.weights <- function(x, y, family, weights, predictor.names, verbose=FAL
 
         if (!is.factor(z) && abs(max(z)-min(z)) < tol) {
             coefs[[predictor]] = 0
-        } else if (is.factor(z) && all.equal(z, z[1])) {
-            coefs[[predictor]] = 0
         }
             model = glm(y~z, family=family, weights=weights)
-print(coef(model))
-print(predictor)
-            coefs[[predictor]] = coef(model)[-1]
+            coefs[[predictor]] = coef(model)[2]
         }
-    }
+    #}
 
     result[['coefs']] = coefs
     result[['adaweight']] = sapply(predictor.names, function(x) abs(coefs[[x]]))

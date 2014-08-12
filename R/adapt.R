@@ -8,8 +8,17 @@
 #' @param selectonly Use the adaptive lasso only for selection, doing coefficient estimation via OLS?
 #'
 #' @export
-adapt <- function(formula, data, family=gaussian, weights=NULL, selection.criterion=c('AIC', 'BIC', 'AICc', 'CV', 'CV.overshrink'), selectonly=FALSE, na.action=na.omit) {
+adapt <- function(formula, data, family=gaussian, weights, selection.criterion=c('AIC', 'BIC', 'AICc', 'CV', 'CV.overshrink'), selectonly=FALSE, na.action=NULL, subset=NULL, offset=NULL, ...) {
     call = match.call()
+    mf <- match.call(expand.dots = FALSE)
+    m <- match(c("formula", "data", "subset", "weights", "na.action", "offset"), names(mf), 0L)
+    mf <- mf[c(1L, m)]
+    mf$drop.unused.levels <- TRUE
+    mf[[1L]] <- quote(stats::model.frame)
+    mf <- eval(mf, parent.frame())
+    mt <- attr(mf, "terms")
+
+    args = list(...)
 
     #Evaluate the family:
     if (is.character(family))
@@ -30,24 +39,26 @@ adapt <- function(formula, data, family=gaussian, weights=NULL, selection.criter
     result[['selection.criterion']] = selection.criterion = match.arg(selection.criterion)
 
     #Get the model data:
-    mf = model.frame(formula, data, na.action=na.action)
     Y = model.response(mf)
-    X = get_all_vars(mf)
-    vars = attr(terms(mf), "term.labels")
-print(terms(mf))
+    X = model.matrix(mf, mtcars, contrasts)[,-attr(mt, "intercept")]
+    vars = attr(mt, "term.labels")
+
+    #Get the observation weights
+    if (missing(weights)) w = rep(1, nrow(X))
+    else w = as.vector(model.weights(mf))
+
     #Pull out the relevant data
-    result[['response']] = attr(mf, 'variables')[attr(mf, 'response')]
-    result[['predictors']] = attr(mf, 'term.labels')
+    result[['response']] = attr(mt, 'variables')[attr(mt, 'response')]
+    result[['predictors']] = vars
+    result[['adapt']] = adaptive.weights(X, Y, family, w, vars)
 
-    result[['adapt']] = adaptive.weights(y=Y, x=X, family=family, weights=weights, predictor.names=vars)
-
-    result[['al']] = adapt.step(x=X, y=Y, adaptive.object=result[['adapt']], selection.criterion=selection.criterion)
-    result[['lambda']] = result[['al']][['model']][['lambda']][result[['al']][['lambda.index']]]
+    result[['al']] = adapt.step(X, Y, family, w, result[['adapt']], selection.criterion, ...)
+    result[['lambda']] = result[['al']][['model']][['lambda']]
 
     if (selectonly) {
         variables = paste(result[['al']][['vars']], collapse="+")
         f = as.formula(paste(result[['response']], "~", variables, sep=""))
-        m = lm(formula=f, data=data)
+        m = glm(formula=f, data=data, family=family, weights=w)
         result[['glm']] = m
         result[['coef']] = coef(m)
         result[['fitted']] = m$fitted
@@ -56,7 +67,7 @@ print(terms(mf))
     } else {
         result[['coef']] = result[['al']][['coef']]
         result[['actual']] = Y
-        result[['fitted']] = predict.adapt(result, data)
+        result[['fitted']] = predict.adapt(result, data, type='response', lambda=result[['lambda']][result[['al']][['lambda.index']]])
         result[['residuals']] = result[['actual']] - result[['fitted']]
     }
 
