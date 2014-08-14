@@ -1,4 +1,4 @@
-adapt.step <- function(x, y, family, weights, adaptive.object, selection.criterion, ...) {
+adapt.step <- function(x, y, family, weights, adaptive.object, ...) {
     result = list()
 
     #Pull out the relevant data
@@ -22,10 +22,10 @@ adapt.step <- function(x, y, family, weights, adaptive.object, selection.criteri
 
     if (family[['family']] == 'binomial') {
         #family == 'binomial' requires p, 1-p to both be specified:
-        result[['model']] = model = do.call(glmnet, c(list(x=x.scaled, y=as.matrix(cbind(1-y, y), nrow(x), 2), family='binomial', weights=weights, standardize=FALSE), list(...)))
+        result[['glmnet']] = model = do.call(glmnet, c(list(x=x.scaled, y=as.matrix(cbind(1-y, y), nrow(x), 2), family='binomial', weights=weights, standardize=FALSE), list(...)))
         cv.obj = do.call(cv.glmnet, c(list(y=as.matrix(cbind(1-y, y), nrow(x), 2), x=x.scaled, nfolds=n, family='binomial', weights=weights, standardize=FALSE, grouped=FALSE), list(...)))
     } else {
-        result[['model']] = model = do.call(glmnet, c(list(x=x.scaled, y=y, family=family[['family']], weights=weights, standardize=FALSE), list(...)))
+        result[['glmnet']] = model = do.call(glmnet, c(list(x=x.scaled, y=y, family=family[['family']], weights=weights, standardize=FALSE), list(...)))
         cv.obj = do.call(cv.glmnet, c(list(y=y, x=x.scaled, nfolds=n, family=family[['family']], weights=weights, standardize=FALSE, grouped=FALSE), list(...)))
     }
 
@@ -40,15 +40,9 @@ adapt.step <- function(x, y, family, weights, adaptive.object, selection.criteri
     result[['AICc']] = dev + 2*df + 2*df*(df+1)/(n-df-1)
     result[['BIC']] = dev + log(n)*df
     result[['CV.overshrink']] = cv[sapply(1:p.max, function(step) which(cv < cv1sd[step])[1])]
-
-    result[['lambda.index']] = lambdex = as.integer(which.min(result[[selection.criterion]]))
-
-    #Summarize the model fit
-    result[['MSEP']] = cv
-    result[['RMSEP']] = sqrt(result[['MSEP']])
+    result[['PRESS']] = cv
 
     #Summarize the model
-    result[['predictors']] = predictor.names
     result[['coef']] = coef(model) %>% sweep(1, c(1, scalex), '*') %>% as.matrix
     result[['coef']][1,] = result[['coef']][1,] - colSums(sweep(result[['coef']][-1,], 1, meanx, '*'))
 

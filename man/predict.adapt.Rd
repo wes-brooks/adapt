@@ -3,7 +3,8 @@
 \alias{predict.adapt}
 \title{Make predictions from an adaptive lasso model.}
 \usage{
-\method{predict}{adapt}(obj, newx)
+\method{predict}{adapt}(obj, newx, lambda = obj[["glmnet"]][["lambda"]],
+  type = c("link", "response", "coefficients", "nonzero", "class"))
 }
 \arguments{
 \item{obj}{an adaptive lasso model}

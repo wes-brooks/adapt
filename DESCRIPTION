@@ -11,5 +11,5 @@ Depends:
     lars,
     glmnet,
     dplyr
-License: MIT
+License: MIT + file LICENSE
 LazyLoad: yes

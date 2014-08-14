@@ -3,19 +3,30 @@
 \alias{adapt}
 \title{Fit an adaptive lasso model.}
 \usage{
-adapt(formula, data, adapt = TRUE, selection.method = "AICc",
-  selectonly = FALSE)
+adapt(formula, data, family = gaussian, weights,
+  selection.criterion = c("AIC", "BIC", "AICc", "CV", "CV.overshrink"),
+  selectonly = FALSE, na.action = NULL, subset = NULL, offset = NULL,
+  ...)
 }
 \arguments{
-\item{formula}{A formula listing the response and covariates}
+\item{formula}{symbolic representation of the model variables}
 
-\item{data}{A data.frame containing the data to use in building the model.}
+\item{data}{data.frame containing observations of the covariates and response from the formula}
 
-\item{adapt}{Whether or not to use adaptive weights in the lasso}
+\item{weights}{vector of observation weights or the name of the column that gives the observation weights.}
 
-\item{selection.method}{The selection criterion to minimize in model fitting}
+\item{selection.criterion}{criterion to minimize in selection step of model fitting}
 
-\item{selectonly}{Use the adaptive lasso only for selection, doing coefficient estimation via OLS?}
+\item{selectonly}{use the adaptive lasso only for selection, doing coefficient estimation via OLS?}
+
+\item{na.action}{how to handle NAs in the data}
+
+\item{subset}{vector indicating which observations to use in model fitting}
+
+\item{offset}{vector of offsets or the name of the offset variable in the data. The offset is added to the linear predictor for the corresponding observation.}
+}
+\value{
+An object of class \code{adapt}.
 }
 \description{
 This function produces a linear regression model via the adaptive lasso. Given a formula, a data.frame, and a selection.method, \code{adapt} will fit a linear model for the predictor in the formula, using the data, that minimizes the selection.method.

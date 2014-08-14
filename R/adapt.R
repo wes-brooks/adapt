@@ -2,10 +2,16 @@
 #'
 #' This function produces a linear regression model via the adaptive lasso. Given a formula, a data.frame, and a selection.method, \code{adapt} will fit a linear model for the predictor in the formula, using the data, that minimizes the selection.method.
 #'
-#' @param formula symbolis representation of the model variables
+#' @param formula symbolic representation of the model variables
 #' @param data data.frame containing observations of the covariates and response from the formula
-#' @param selection.criterion The selection criterion to minimize in model fitting
-#' @param selectonly Use the adaptive lasso only for selection, doing coefficient estimation via OLS?
+#' @param weights vector of observation weights or the name of the column that gives the observation weights.
+#' @param selection.criterion criterion to minimize in selection step of model fitting
+#' @param selectonly use the adaptive lasso only for selection, doing coefficient estimation via OLS?
+#' @param na.action how to handle NAs in the data
+#' @param subset vector indicating which observations to use in model fitting
+#' @param offset vector of offsets or the name of the offset variable in the data. The offset is added to the linear predictor for the corresponding observation.
+#'
+#' @return An object of class \code{adapt}.
 #'
 #' @export
 adapt <- function(formula, data, family=gaussian, weights, selection.criterion=c('AIC', 'BIC', 'AICc', 'CV', 'CV.overshrink'), selectonly=FALSE, na.action=NULL, subset=NULL, offset=NULL, ...) {
@@ -17,8 +23,6 @@ adapt <- function(formula, data, family=gaussian, weights, selection.criterion=c
     mf[[1L]] <- quote(stats::model.frame)
     mf <- eval(mf, parent.frame())
     mt <- attr(mf, "terms")
-
-    args = list(...)
 
     #Evaluate the family:
     if (is.character(family))
@@ -32,7 +36,6 @@ adapt <- function(formula, data, family=gaussian, weights, selection.criterion=c
 
     #Create the object that will hold the output
     result = list()
-    class(result) = "adapt"
     result[['call']] = call
     result[['formula']] = as.formula(formula, env=data)
     result[['selectonly']] = selectonly
@@ -40,7 +43,7 @@ adapt <- function(formula, data, family=gaussian, weights, selection.criterion=c
 
     #Get the model data:
     Y = model.response(mf)
-    X = model.matrix(mf, mtcars, contrasts)[,-attr(mt, "intercept")]
+    X = model.matrix(mf, data=mf, contrasts)[,-attr(mt, "intercept")]
     vars = attr(mt, "term.labels")
 
     #Get the observation weights
@@ -52,25 +55,30 @@ adapt <- function(formula, data, family=gaussian, weights, selection.criterion=c
     result[['predictors']] = vars
     result[['adapt']] = adaptive.weights(X, Y, family, w, vars)
 
-    result[['al']] = adapt.step(X, Y, family, w, result[['adapt']], selection.criterion, ...)
-    result[['lambda']] = result[['al']][['model']][['lambda']]
+    adapt = adapt.step(X, Y, family, w, result[['adapt']], ...)
+    result = c(result, adapt)
+
+    result[['lambda']] = result[['glmnet']][['lambda']]
+    result[['lambda.index']] = lambdex = as.integer(which.min(result[[selection.criterion]]))
+    vardex = predict(adapt[['glmnet']], type="nonzero")[lambdex][[1]]
 
     if (selectonly) {
-        variables = paste(result[['al']][['vars']], collapse="+")
+        variables = paste(vars[vardex], collapse="+")
         f = as.formula(paste(result[['response']], "~", variables, sep=""))
-        m = glm(formula=f, data=data, family=family, weights=w)
+        m = glm(formula=f, data=data, family=family, weights=w, na.action, subset, offset)
         result[['glm']] = m
-        result[['coef']] = coef(m)
+        result[['coefficients']] = coef(m)
         result[['fitted']] = m$fitted
         result[['residuals']] = m$residuals
         result[['actual']] = m$fitted + m$residuals
     } else {
-        result[['coef']] = result[['al']][['coef']]
+        result[['coefficients']] = result[['coef']]
         result[['actual']] = Y
-        result[['fitted']] = predict.adapt(result, data, type='response', lambda=result[['lambda']][result[['al']][['lambda.index']]])
+        result[['fitted']] = predict.adapt(result, mf, type='response')
         result[['residuals']] = result[['actual']] - result[['fitted']]
     }
 
+    class(result) = "adapt"
     return(result)
 }
 
