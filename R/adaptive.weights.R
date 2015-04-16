@@ -18,8 +18,8 @@ adaptive.weights <- function(x, y, family, weights, predictor.names, verbose=FAL
         }
     #}
 
-    result[['coefs']] = coefs
-    result[['adaweight']] = sapply(predictor.names, function(x) abs(coefs[[x]]))
+    result$coefs = coefs
+    result$adaweight = sapply(predictor.names, function(x) abs(coefs[[x]]))
 
     return(result)
 }

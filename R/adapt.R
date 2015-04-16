@@ -36,10 +36,10 @@ adapt <- function(formula, data, family=gaussian, weights, selection.criterion=c
 
     #Create the object that will hold the output
     result = list()
-    result[['call']] = call
-    result[['formula']] = as.formula(formula, env=data)
-    result[['selectonly']] = selectonly
-    result[['selection.criterion']] = selection.criterion = match.arg(selection.criterion)
+    result$call = call
+    result$formula = as.formula(formula, env=data)
+    result$selectonly = selectonly
+    result$selection.criterion = selection.criterion = match.arg(selection.criterion)
 
     #Get the model data:
     Y = model.response(mf)
@@ -51,31 +51,31 @@ adapt <- function(formula, data, family=gaussian, weights, selection.criterion=c
     else w = as.vector(model.weights(mf))
 
     #Pull out the relevant data
-    result[['response']] = attr(mt, 'variables')[attr(mt, 'response')]
-    result[['predictors']] = vars
-    result[['adapt']] = adaptive.weights(X, Y, family, w, vars)
+    result$response = attr(mt, 'variables')[attr(mt, 'response')]
+    result$predictors = vars
+    result$adapt = adaptive.weights(X, Y, family, w, vars)
 
-    adapt = adapt.step(X, Y, family, w, result[['adapt']], ...)
+    adapt = adapt.step(X, Y, family, w, result$adapt, ...)
     result = c(result, adapt)
 
-    result[['lambda']] = result[['glmnet']][['lambda']]
-    result[['lambda.index']] = lambdex = as.integer(which.min(result[[selection.criterion]]))
-    vardex = predict(adapt[['glmnet']], type="nonzero")[lambdex][[1]]
+    result$lambda = result$glmnet$lambda
+    result$lambda.index = lambdex = as.integer(which.min(result[[selection.criterion]]))
+    vardex = predict(adapt$glmnet, type="nonzero")[lambdex][[1]]
 
     if (selectonly) {
         variables = paste(vars[vardex], collapse="+")
-        f = as.formula(paste(result[['response']], "~", variables, sep=""))
+        f = as.formula(paste(result$response, "~", variables, sep=""))
         m = glm(formula=f, data=data, family=family, weights=w, na.action, subset, offset)
-        result[['glm']] = m
-        result[['coefficients']] = coef(m)
-        result[['fitted']] = m$fitted
-        result[['residuals']] = m$residuals
-        result[['actual']] = m$fitted + m$residuals
+        result$glm = m
+        result$coefficients = coef(m)
+        result$fitted = m$fitted
+        result$residuals = m$residuals
+        result$actual = m$fitted + m$residuals
     } else {
-        result[['coefficients']] = result[['coef']]
-        result[['actual']] = Y
-        result[['fitted']] = predict.adapt(result, mf, type='response')
-        result[['residuals']] = result[['actual']] - result[['fitted']]
+        result$coefficients = result$coef
+        result$actual = Y
+        result$fitted = predict.adapt(result, mf, type='response')
+        result$residuals = result$actual - result$fitted
     }
 
     class(result) = "adapt"
