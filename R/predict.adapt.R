@@ -5,10 +5,12 @@
 #'
 #' @export
 predict.adapt <-  function(obj, newx, lambda=obj$glmnet$lambda, type=c("link","response","coefficients","nonzero","class")) {
-print(obj$meanx)
-print(length(obj$meanx))
+
 
     pred.data = newx
+print(obj$predictors)
+print(names(pred.data))
+print(length(obj$meanx))
     predictors = obj$predcictors
 print(dim(pred.data[,predictors] %>% as.matrix))
     pred.data = pred.data[,predictors] %>% as.matrix %>% sweep(2, obj$meanx, '-') %>% sweep(2, obj$scale, '*')
