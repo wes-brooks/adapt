@@ -8,10 +8,8 @@ predict.adapt <-  function(obj, newx, lambda=obj$glmnet$lambda, type=c("link","r
 
 
     pred.data = newx
-print(pred.data[,obj$predcictors])
-print(class(pred.data))
+print(colnames(pred.data))
     predictors = obj$predcictors
-print(dim(pred.data[,predictors] %>% as.matrix))
     pred.data = pred.data[,predictors] %>% as.matrix %>% sweep(2, obj$meanx, '-') %>% sweep(2, obj$scale, '*')
     type = match.arg(type)
 
